@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+</head>
+
+<body>
+
+<script>
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(load_charts);
+
+    function load_charts() {
+       var commands = ["status","create","destroy","deploy"];
+       var since = Date.now()-24*3600*1000;
+
+       $.each(commands, function(i,command){
+           console.log("Loading " + command)
+           $.ajax({
+               url: "/commands/"+command,
+               dataType: "json",
+               success: function (response) {
+                   draw_charts(response,command)
+               }
+           });
+           console.log("Loading histograms since: " + since);
+           $.ajax({
+               url: "/commands/"+command+"?since="+since,
+               dataType: "json",
+               success: function (response) {
+                   drawHistogram(response,command)
+               }
+           })
+       });
+
+
+    }
+
+
+    function drawHistogram(response,command){
+        var histogramArray = [[command,'Response Time']]
+        $.each(response, function (i,resource) {
+            histogramArray.push(["COMMAND",resource.responseTime]);
+        });
+        var histogramData = google.visualization.arrayToDataTable(histogramArray);
+        var histogram =  new google.visualization.Histogram(document.getElementById(command+'_histogram'));
+        var histrogramOptions = {
+            title: 'Response distribution last 24 hours',
+            legend: { position: 'none' },
+            colors: ['#e7711c'],
+            chartArea: { width: 501 },
+
+
+            bar: { gap: 0 },
+            hAxis: {
+
+                slantedText: true,
+                textStyle: {
+                    fontSize: 8
+                }
+
+            },
+            histogram: {
+                bucketSize: 250,
+                maxNumBuckets: 20,
+                minValue: -1,
+                maxValue: 1
+            }
+        };
+        histogram.draw(histogramData,histrogramOptions);
+    }
+
+
+    function draw_charts(response, command) {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Request Time');
+        data.addColumn('number', 'Response Time');
+
+        var array = [];
+        $.each(response, function (i,resource) {
+             array.push([new Date(resource.requestTime), resource.responseTime]);
+        });
+
+        data.addRows(array);
+        var chart = new google.visualization.LineChart(document.getElementById(command+'_chart'));
+
+        var options = {
+            title: "Response time last 15 minutes",
+            hAxis: {
+                title: 'Invocation Time'
+            },
+            vAxis: {
+                title: 'Response Time'
+            },
+            curveType: 'function'
+
+
+        };
+
+        chart.draw(data,options);
+
+
+    }
+
+    $(document).ready(function() {
+
+    });
+
+</script>
+</body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12" style="background-color: #94a2dd"><h2>Status</h2></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 chart" id="status_chart"></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6 chart" id="status_histogram"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12" style="background-color: #94a2dd"><h2>Create</h2></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 chart" id="create_chart"></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6 chart" id="create_histogram"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12" style="background-color: #94a2dd"><h2>Deploy</h2></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 chart" id="deploy_chart"></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6 chart" id="deploy_histogram"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12" style="background-color: #94a2dd"><h2>Destroy</h2></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 chart" id="destroy_chart"></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6 chart" id="destroy_histogram"></div>
+    </div>
+</div>
+
+</html>
