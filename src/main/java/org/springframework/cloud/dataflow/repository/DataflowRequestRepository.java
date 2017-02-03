@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * @author Vinicius Carvalho
  */
 @Repository
-public interface DataflowRequestRepository extends CrudRepository<DataflowRequest,String>{
+public interface DataflowRequestRepository extends CrudRepository<DataflowRequest,Integer>{
 
 	List<DataflowRequest> findByCommandAndRequestTimeGreaterThan(String command, Date requestTime);
 	List<DataflowRequest> findByRequestId(String requestId);

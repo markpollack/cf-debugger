@@ -26,6 +26,15 @@ public class DataflowRequest {
 	private Long responseTime;
 	private Integer responseStatus;
 	private String message;
+	private String vcapRequestId;
+
+	public String getVcapRequestId() {
+		return vcapRequestId;
+	}
+
+	public void setVcapRequestId(String vcapRequestId) {
+		this.vcapRequestId = vcapRequestId;
+	}
 
 	public String getMessage() {
 		return message;

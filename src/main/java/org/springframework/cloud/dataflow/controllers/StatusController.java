@@ -3,6 +3,8 @@ package org.springframework.cloud.dataflow.controllers;
 import java.util.Date;
 import java.util.List;
 
+import javax.xml.ws.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +55,11 @@ public class StatusController {
 	public ResponseEntity<String> toggle() {
 		this.running = !running;
 		return ResponseEntity.ok(""+this.running);
+	}
+
+	@RequestMapping(method = RequestMethod.GET,value = "/command/{id}")
+	public ResponseEntity<DataflowRequest> get(@PathVariable(name="id") Integer id){
+		return ResponseEntity.ok(performanceTestService.findById(id));
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/commands/{command}")

@@ -18,6 +18,7 @@ import org.springframework.cloud.dataflow.repository.DataflowRequestRepository;
 import org.springframework.cloud.dataflow.rest.client.DataFlowClientException;
 import org.springframework.cloud.dataflow.rest.client.DataFlowTemplate;
 import org.springframework.cloud.dataflow.rest.resource.StreamDefinitionResource;
+import org.springframework.cloud.dataflow.utils.RequestContextHolder;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
@@ -65,6 +66,10 @@ public class DataFlowPerfTestService {
 		return requestRepository.histogram(command.toUpperCase());
 	}
 
+	public DataflowRequest findById(Integer id){
+		return requestRepository.findOne(id);
+	}
+
 	public ServerStats fetchRequestStats(){
 		ServerStats stats = new ServerStats();
 		requestRepository.aggreate().forEach(objects -> {
@@ -86,7 +91,10 @@ public class DataFlowPerfTestService {
 		request.setCommand("DESTROY");
 		try{
 			watch.start();
+			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().destroy(name);
+			request = RequestContextHolder.getInstance().getRequest();
+
 			request.setResponseStatus(200);
 		}catch (Exception e){
 			logger.error(String.format("Failed to destroy stream for request-id %s stream name: %s",request,name), e);
@@ -95,6 +103,7 @@ public class DataFlowPerfTestService {
 		}finally {
 			watch.stop();
 			request.setResponseTime(watch.getLastTaskTimeMillis());
+			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
 		requestRepository.save(request);
@@ -109,8 +118,9 @@ public class DataFlowPerfTestService {
 			PagedResources<StreamDefinitionResource> result = null;
 			try {
 				watch.start();
+				RequestContextHolder.getInstance().setRequest(request);
 				result = client.streamOperations().list();
-
+				request = RequestContextHolder.getInstance().getRequest();
 				request.setResponseStatus(200);
 			}catch (Exception e){
 				logger.error(String.format("Failed to list status of streams for request-id %s stream name: %s",request,name), e);
@@ -139,6 +149,7 @@ public class DataFlowPerfTestService {
 				}
 				requestRepository.save(request);
 				logger.info("Executed: {}",request);
+				RequestContextHolder.getInstance().reset();
 			}
 
 
@@ -151,7 +162,9 @@ public class DataFlowPerfTestService {
 		request.setCommand("DEPLOY");
 		try {
 			watch.start();
+			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().deploy(name, Collections.emptyMap());
+			request = RequestContextHolder.getInstance().getRequest();
 			request.setResponseStatus(200);
 			request.setMessage("Deploying stream: " + name);
 		}catch (Exception e){
@@ -161,6 +174,7 @@ public class DataFlowPerfTestService {
 		}finally {
 			watch.stop();
 			request.setResponseTime(watch.getLastTaskTimeMillis());
+			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
 		requestRepository.save(request);
@@ -171,7 +185,9 @@ public class DataFlowPerfTestService {
 		request.setCommand("CREATE");
 		try {
 			watch.start();
+			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().createStream(name,definition, false);
+			request = RequestContextHolder.getInstance().getRequest();
 			request.setResponseStatus(200);
 			request.setMessage("Creating stream: " + name);
 		}catch (DataFlowClientException e){
@@ -181,6 +197,7 @@ public class DataFlowPerfTestService {
 		}finally {
 			watch.stop();
 			request.setResponseTime(watch.getLastTaskTimeMillis());
+			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
 		requestRepository.save(request);

@@ -78,18 +78,34 @@
         histogram.draw(histogramData,histrogramOptions);
     }
 
+    function update_summary(response){
+        var command = response.command.toLowerCase();
+        $("#"+command+"_request_id").text(response.requestId);
+        $("#"+command+"_request_time").text(response.requestTime);
+        $("#"+command+"_command").text(response.command);
+        $("#"+command+"_response_time").text(response.responseTime);
+        $("#"+command+"_response_status").text(response.responseStatus);
+        $("#"+command+"_vcap_id").text(response.vcapRequestId);
+        $("#"+command+"_message").text(response.message);
+
+    }
+
+
 
     function draw_charts(response, command) {
         var data = new google.visualization.DataTable();
         data.addColumn('datetime', 'Request Time');
         data.addColumn('number', 'Response Time');
+        data.addColumn('number', 'id');
 
         var array = [];
         $.each(response, function (i,resource) {
-             array.push([new Date(resource.requestTime), resource.responseTime]);
+             array.push([new Date(resource.requestTime), resource.responseTime,resource.id]);
         });
 
         data.addRows(array);
+        dataview = new google.visualization.DataView(data);
+        dataview.hideColumns([2]);
         var chart = new google.visualization.LineChart(document.getElementById(command+'_chart'));
 
         var options = {
@@ -105,7 +121,21 @@
 
         };
 
-        chart.draw(data,options);
+        function selectHandler() {
+            var selectedItem = chart.getSelection()[0];
+            if (selectedItem) {
+                var id = data.getValue(selectedItem.row, 2);
+                $.ajax({
+                    url: "/command/"+id,
+                    dataType: "json",
+                    success: function (response) {
+                        update_summary(response)
+                    }
+                });
+            }
+        }
+        google.visualization.events.addListener(chart, 'select', selectHandler);
+        chart.draw(dataview,options);
 
 
     }
@@ -125,7 +155,30 @@
         <div class="col-lg-12 chart" id="status_chart"></div>
     </div>
     <div class="row">
-        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6" style="background-color: #ddd99b">
+            <div class="row">
+                <div class="col-lg-12">Request id: <span id="status_request_id"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Request time: <span id="status_request_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Command: <span id="status_command"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response time: <span id="status_response_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response status: <span id="status_response_status"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">VCAP Request Id: <span id="status_vcap_id"></span></div>
+            </div>
+            <div class="row">
+
+                <div class="col-lg-12">Message: <span id="status_message"></span></div>
+            </div>
+        </div>
         <div class="col-lg-6 chart" id="status_histogram"></div>
     </div>
 
@@ -136,7 +189,30 @@
         <div class="col-lg-12 chart" id="create_chart"></div>
     </div>
     <div class="row">
-        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6" style="background-color: #ddd99b">
+            <div class="row">
+                <div class="col-lg-12">Request id: <span id="create_request_id"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Request time: <span id="create_request_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Command: <span id="create_command"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response time: <span id="create_response_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response status: <span id="create_response_status"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">VCAP Request Id: <span id="create_vcap_id"></span></div>
+            </div>
+            <div class="row">
+
+                <div class="col-lg-12">Message: <span id="create_message"></span></div>
+            </div>
+        </div>
         <div class="col-lg-6 chart" id="create_histogram"></div>
     </div>
 
@@ -147,7 +223,30 @@
         <div class="col-lg-12 chart" id="deploy_chart"></div>
     </div>
     <div class="row">
-        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6" style="background-color: #ddd99b">
+            <div class="row">
+                <div class="col-lg-12">Request id: <span id="deploy_request_id"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Request time: <span id="deploy_request_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Command: <span id="deploy_command"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response time: <span id="deploy_response_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response status: <span id="deploy_response_status"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">VCAP Request Id: <span id="deploy_vcap_id"></span></div>
+            </div>
+            <div class="row">
+
+                <div class="col-lg-12">Message: <span id="deploy_message"></span></div>
+            </div>
+        </div>
         <div class="col-lg-6 chart" id="deploy_histogram"></div>
     </div>
 
@@ -158,7 +257,30 @@
         <div class="col-lg-12 chart" id="destroy_chart"></div>
     </div>
     <div class="row">
-        <div class="col-lg-6" style="background-color: #ddd99b">Summary</div>
+        <div class="col-lg-6" style="background-color: #ddd99b">
+            <div class="row">
+                <div class="col-lg-12">Request id: <span id="destroy_request_id"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Request time: <span id="destroy_request_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Command: <span id="destroy_command"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response time: <span id="destroy_response_time"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">Response status: <span id="destroy_response_status"></span></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">VCAP Request Id: <span id="destroy_vcap_id"></span></div>
+            </div>
+            <div class="row">
+
+                <div class="col-lg-12">Message: <span id="destroy_message"></span></div>
+            </div>
+        </div>
         <div class="col-lg-6 chart" id="destroy_histogram"></div>
     </div>
 </div>
