@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dataflow integration tests</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+</head>
+
+<body>
+
+<script>
+
+    function Chart(command){
+
+        var self = this;
+        self.command = command;
+
+        self.lastPoll = -1;
+        self.timer;
+
+        self.start = function(){
+            self.timer = setInterval(self.poll,5000);
+        }
+
+        self.poll = function() {
+            if(self.lastPoll < 0){
+                self.lastPoll = Date.now() - 15*60*1000;
+            }
+            $.ajax({
+                url: "/commands/"+self.command+"?since="+self.lastPoll,
+                dataType: "json",
+                success: function (response) {
+                    console.log(response.length);
+                    if(response.length > 0){
+                        self.lastPoll = Date.now();
+                    }
+                }
+            })
+        }
+
+    }
+
+    $(document).ready(function() {
+        var chart = new Chart("status");
+        chart.start();
+    });
+
+</script>
+
+</body>
+</html>

@@ -1,7 +1,13 @@
 package org.springframework.cloud.dataflow.controllers;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.xml.ws.Response;
 
@@ -28,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/")
 public class StatusController {
 
-	private volatile boolean running = false;
 
 	private Logger logger = LoggerFactory.getLogger(StatusController.class);
 
@@ -52,9 +57,12 @@ public class StatusController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST)
-	public ResponseEntity<String> toggle() {
-		this.running = !running;
-		return ResponseEntity.ok(""+this.running);
+	public ResponseEntity<String> toggle(@RequestParam(name = "deployments")Integer deployments) {
+		if(deployments == null){
+			deployments = Integer.MAX_VALUE;
+		}
+		this.performanceTestService.toggle(deployments);
+		return ResponseEntity.ok(""+this.performanceTestService.isRunning());
 	}
 
 	@RequestMapping(method = RequestMethod.GET,value = "/command/{id}")
@@ -64,10 +72,13 @@ public class StatusController {
 
 	@RequestMapping(method = RequestMethod.GET, value = "/commands/{command}")
 	public ResponseEntity<List<DataflowRequest>> fetchRequests(@PathVariable(name = "command") String command, @RequestParam(value = "since",defaultValue = "0") Long since){
-		if(since <=0){
-			since = System.currentTimeMillis()-15*60*1000;
+
+		if(since <=0) {
+			since = System.currentTimeMillis() - 15 * 60 * 1000;
 		}
 		Date requestTime = new Date(since);
+
+
 		return ResponseEntity.ok(performanceTestService.fetchMetrics(command.toUpperCase(),requestTime));
 	}
 
@@ -80,11 +91,6 @@ public class StatusController {
 		return ResponseEntity.ok(performanceTestService.histogram(command));
 	}
 
-	@Scheduled(fixedDelay = 1000L)
-	public void getStatus() {
-		if(running) {
-			performanceTestService.fetchMetrics();
-		}
-	}
+
 
 }
