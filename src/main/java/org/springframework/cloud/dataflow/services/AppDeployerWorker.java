@@ -28,6 +28,7 @@ public class AppDeployerWorker implements Runnable {
 	private DataFlowTemplate client;
 	private StopWatch watch;
 	private AtomicInteger deploymentCounter;
+	private int id;
 
 	public boolean isRunning() {
 		return running;
@@ -39,12 +40,14 @@ public class AppDeployerWorker implements Runnable {
 
 	private volatile boolean running = true;
 
-	public AppDeployerWorker(DataflowRequestRepository requestRepository, DataFlowTemplate client, AtomicInteger deploymentCounter) {
+	public AppDeployerWorker(DataflowRequestRepository requestRepository, DataFlowTemplate client, AtomicInteger deploymentCounter, int id) {
 		this.requestRepository = requestRepository;
 		this.client = client;
 		this.watch = new StopWatch();
 		this.watch.setKeepTaskList(false);
+		this.id = id;
 		this.deploymentCounter = deploymentCounter;
+		logger.info("Creating worker id: {} ", id) ;
 
 	}
 

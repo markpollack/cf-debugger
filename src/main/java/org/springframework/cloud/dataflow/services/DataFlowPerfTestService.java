@@ -37,11 +37,11 @@ public class DataFlowPerfTestService {
 	@Autowired
 	public DataFlowPerfTestService(DataflowRequestRepository requestRepository, DataflowDebuggerProperties properties, DataFlowTemplate dataFlowTemplate) {
 		this.requestRepository = requestRepository;
-		this.pool = Executors.newFixedThreadPool(4);
+		this.pool = Executors.newFixedThreadPool(properties.getConcurrentUsers());
 		this.properties = properties;
-
+		logger.info("Creating pool of {} workers ",properties.getConcurrentUsers());
 		for(int i = 0;i<properties.getConcurrentUsers();i++){
-			workers.add(new AppDeployerWorker(requestRepository,dataFlowTemplate,deploymentCount));
+			workers.add(new AppDeployerWorker(requestRepository,dataFlowTemplate,deploymentCount,i+1));
 		}
 	}
 
@@ -58,6 +58,7 @@ public class DataFlowPerfTestService {
 	}
 
 	private void start(){
+		logger.info("Starting workers. Rnunning {} concurrent users",properties.getConcurrentUsers());
 		workers.forEach(appDeployerWorker -> {
 			appDeployerWorker.setRunning(true);
 			pool.submit(appDeployerWorker);
@@ -65,6 +66,7 @@ public class DataFlowPerfTestService {
 	}
 
 	private void stop(){
+		logger.info("Stopping test");
 		workers.forEach(appDeployerWorker -> {appDeployerWorker.setRunning(false);});
 		pool.shutdown();
 	}

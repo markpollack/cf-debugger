@@ -57,8 +57,8 @@ public class StatusController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST)
-	public ResponseEntity<String> toggle(@RequestParam(name = "deployments")Integer deployments) {
-		if(deployments == null){
+	public ResponseEntity<String> toggle(@RequestParam(name = "deployments", defaultValue = "0")Integer deployments) {
+		if(deployments == 0){
 			deployments = Integer.MAX_VALUE;
 		}
 		this.performanceTestService.toggle(deployments);
