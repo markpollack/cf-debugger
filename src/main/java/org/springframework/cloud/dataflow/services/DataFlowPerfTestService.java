@@ -35,7 +35,8 @@ public class DataFlowPerfTestService {
 	private AtomicInteger deploymentCount = new AtomicInteger(0);
 
 	@Autowired
-	public DataFlowPerfTestService(DataflowRequestRepository requestRepository, DataflowDebuggerProperties properties, DataFlowTemplate dataFlowTemplate) {
+	public DataFlowPerfTestService(DataflowRequestRepository requestRepository,
+								   DataflowDebuggerProperties properties, DataFlowTemplate dataFlowTemplate) {
 		this.requestRepository = requestRepository;
 		this.pool = Executors.newFixedThreadPool(properties.getConcurrentUsers());
 		this.properties = properties;

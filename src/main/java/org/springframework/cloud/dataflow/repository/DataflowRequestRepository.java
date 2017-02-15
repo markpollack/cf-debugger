@@ -18,6 +18,7 @@ public interface DataflowRequestRepository extends CrudRepository<DataflowReques
 
 	List<DataflowRequest> findByCommandAndRequestTimeGreaterThan(String command, Date requestTime);
 	List<DataflowRequest> findByRequestId(String requestId);
+
 	@Query(nativeQuery = true, value = "SELECT COMMAND as command, COUNT(COMMAND) AS total, AVG(RESPONSE_TIME) as average, MIN(RESPONSE_TIME) as maximum, MAX(RESPONSE_TIME) as minimum, STD(RESPONSE_TIME) as standard_deviation FROM dataflow_request GROUP BY COMMAND")
 	List<Object[]> aggreate();
 	@Query(nativeQuery = true,

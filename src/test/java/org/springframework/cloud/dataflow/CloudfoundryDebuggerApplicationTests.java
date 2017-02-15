@@ -20,8 +20,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest
 public class CloudfoundryDebuggerApplicationTests {
 
-	@Autowired
-	private DataFlowPerfTestService service;
+	//@Autowired
+	//private DataFlowPerfTestService service;
 
 	@Autowired
 	private RabbitTemplate template;

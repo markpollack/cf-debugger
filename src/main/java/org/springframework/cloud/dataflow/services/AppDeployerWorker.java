@@ -40,7 +40,8 @@ public class AppDeployerWorker implements Runnable {
 
 	private volatile boolean running = true;
 
-	public AppDeployerWorker(DataflowRequestRepository requestRepository, DataFlowTemplate client, AtomicInteger deploymentCounter, int id) {
+	public AppDeployerWorker(DataflowRequestRepository requestRepository,
+							 DataFlowTemplate client, AtomicInteger deploymentCounter, int id) {
 		this.requestRepository = requestRepository;
 		this.client = client;
 		this.watch = new StopWatch();
@@ -53,7 +54,9 @@ public class AppDeployerWorker implements Runnable {
 
 	@Override
 	public void run() {
+		logger.info("Running id: {} ", id);
 		while(running && deploymentCounter.decrementAndGet() > 0){
+			logger.info("staring request sequence for id: {} ", id);
 			String requestId = UUID.randomUUID().toString();
 			String streamName = "http-log-"+ RandomStringUtils.random(8, true, false);
 			create(requestId,streamName,"http | log");
@@ -102,11 +105,16 @@ public class AppDeployerWorker implements Runnable {
 				result = client.streamOperations().list();
 				request = RequestContextHolder.getInstance().getRequest();
 				request.setResponseStatus(200);
-			}catch (Exception e){
-				logger.error(String.format("Failed to list status of streams for request-id %s stream name: %s",request,name), e);
+			}catch (DataFlowClientException e){
+				logger.warn(String.format("Failed to list status of streams for request-id %s stream name: %s",request,name), e);
 				request.setResponseStatus(500);
 				request.setMessage("Client exception " + e.getMessage());
-			}finally {
+			} catch (Exception e) {
+				logger.error(String.format(">>> Unanticipated exception for request-id %s stream name: %s",request,name), e);
+				request.setResponseStatus(500);
+				request.setMessage("Client exception " + e.getMessage());
+			}
+			finally {
 				watch.stop();
 				request.setResponseTime(watch.getLastTaskTimeMillis());
 				attempts++;
@@ -161,6 +169,7 @@ public class AppDeployerWorker implements Runnable {
 	}
 
 	private void create(String requestId, String name, String definition) {
+		logger.info("Creating {} ", name);
 		DataflowRequest request = new DataflowRequest(requestId);
 		request.setCommand("CREATE");
 		try {
@@ -170,7 +179,7 @@ public class AppDeployerWorker implements Runnable {
 			request = RequestContextHolder.getInstance().getRequest();
 			request.setResponseStatus(200);
 			request.setMessage("Creating stream: " + name);
-		}catch (DataFlowClientException e){
+		}catch (Exception e){
 			logger.error(String.format("Failed to create stream for request-id %s stream name: %s",request,name), e);
 			request.setResponseStatus(500);
 			request.setMessage("Client exception " + e.getMessage());
