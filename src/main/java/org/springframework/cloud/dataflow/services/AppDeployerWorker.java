@@ -9,11 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.dataflow.model.DataflowRequest;
-import org.springframework.cloud.dataflow.repository.DataflowRequestRepository;
 import org.springframework.cloud.dataflow.rest.client.DataFlowClientException;
 import org.springframework.cloud.dataflow.rest.client.DataFlowTemplate;
 import org.springframework.cloud.dataflow.rest.resource.StreamDefinitionResource;
-import org.springframework.cloud.dataflow.utils.RequestContextHolder;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.util.StopWatch;
 
@@ -22,7 +20,6 @@ import org.springframework.util.StopWatch;
  */
 public class AppDeployerWorker implements Runnable {
 
-	private DataflowRequestRepository requestRepository;
 	private final Integer MAX_ATTEMPTS = 120;
 	private Logger logger = LoggerFactory.getLogger(AppDeployerWorker.class);
 	private DataFlowTemplate client;
@@ -40,9 +37,7 @@ public class AppDeployerWorker implements Runnable {
 
 	private volatile boolean running = true;
 
-	public AppDeployerWorker(DataflowRequestRepository requestRepository,
-							 DataFlowTemplate client, AtomicInteger deploymentCounter, int id) {
-		this.requestRepository = requestRepository;
+	public AppDeployerWorker(DataFlowTemplate client, AtomicInteger deploymentCounter, int id) {
 		this.client = client;
 		this.watch = new StopWatch();
 		this.watch.setKeepTaskList(false);
@@ -71,9 +66,7 @@ public class AppDeployerWorker implements Runnable {
 		request.setCommand("DESTROY");
 		try{
 			watch.start();
-			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().destroy(name);
-			request = RequestContextHolder.getInstance().getRequest();
 
 			request.setResponseStatus(200);
 		}catch (Exception e){
@@ -83,10 +76,8 @@ public class AppDeployerWorker implements Runnable {
 		}finally {
 			watch.stop();
 			request.setResponseTime(watch.getLastTaskTimeMillis());
-			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
-		requestRepository.save(request);
 	}
 
 	private void status(String requestId, String name) {
@@ -101,18 +92,11 @@ public class AppDeployerWorker implements Runnable {
 			PagedResources<StreamDefinitionResource> result = null;
 			try {
 				watch.start();
-				RequestContextHolder.getInstance().setRequest(request);
 				result = client.streamOperations().list();
-				request = RequestContextHolder.getInstance().getRequest();
-				request.setResponseStatus(200);
 			}catch (DataFlowClientException e){
 				logger.warn(String.format("Failed to list status of streams for request-id %s stream name: %s",request,name), e);
-				request.setResponseStatus(500);
-				request.setMessage("Client exception " + e.getMessage());
 			} catch (Exception e) {
 				logger.error(String.format(">>> Unanticipated exception for request-id %s stream name: %s",request,name), e);
-				request.setResponseStatus(500);
-				request.setMessage("Client exception " + e.getMessage());
 			}
 			finally {
 				watch.stop();
@@ -123,7 +107,6 @@ public class AppDeployerWorker implements Runnable {
 					for (StreamDefinitionResource resource : result.getContent()) {
 						request.setMessage("Status: " + resource.getStatus());
 						if (resource.getName().equals(name) && resource.getStatus().equalsIgnoreCase("deployed")) {
-							requestRepository.save(request);
 							logger.info("Executed: {}", request);
 							break out;
 						}
@@ -135,9 +118,7 @@ public class AppDeployerWorker implements Runnable {
 				catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				requestRepository.save(request);
 				logger.info("Executed: {}",request);
-				RequestContextHolder.getInstance().reset();
 			}
 
 
@@ -150,22 +131,13 @@ public class AppDeployerWorker implements Runnable {
 		request.setCommand("DEPLOY");
 		try {
 			watch.start();
-			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().deploy(name, Collections.emptyMap());
-			request = RequestContextHolder.getInstance().getRequest();
-			request.setResponseStatus(200);
-			request.setMessage("Deploying stream: " + name);
 		}catch (Exception e){
 			logger.error(String.format("Failed to deploy stream for request-id %s stream name: %s",request,name), e);
-			request.setResponseStatus(500);
-			request.setMessage("Client exception " + e.getMessage());
 		}finally {
 			watch.stop();
-			request.setResponseTime(watch.getLastTaskTimeMillis());
-			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
-		requestRepository.save(request);
 	}
 
 	private void create(String requestId, String name, String definition) {
@@ -174,21 +146,12 @@ public class AppDeployerWorker implements Runnable {
 		request.setCommand("CREATE");
 		try {
 			watch.start();
-			RequestContextHolder.getInstance().setRequest(request);
 			client.streamOperations().createStream(name,definition, false);
-			request = RequestContextHolder.getInstance().getRequest();
-			request.setResponseStatus(200);
-			request.setMessage("Creating stream: " + name);
 		}catch (Exception e){
 			logger.error(String.format("Failed to create stream for request-id %s stream name: %s",request,name), e);
-			request.setResponseStatus(500);
-			request.setMessage("Client exception " + e.getMessage());
 		}finally {
 			watch.stop();
-			request.setResponseTime(watch.getLastTaskTimeMillis());
-			RequestContextHolder.getInstance().reset();
 		}
 		logger.info("Executed: {}",request);
-		requestRepository.save(request);
 	}
 }
